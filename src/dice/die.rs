@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use super::DieSide;
+
 /// Represents a boolean algebraic die
 #[derive(Clone, Copy)]
 pub struct Die<const N: usize> {
@@ -7,6 +9,24 @@ pub struct Die<const N: usize> {
 }
 
 impl<const N: usize> Die<N> {
+    pub fn new<S: AsRef<str>>(value: S) -> Self {
+        if value.as_ref().len() != N {
+            panic!("Value must be of length {}", N);
+        }
+
+        let mut content = [DieSide::DontCare; N];
+        for (i, c) in value.as_ref().chars().enumerate() {
+            match c {
+                '0' => content[i] = DieSide::Zero,
+                '1' => content[i] = DieSide::One,
+                '-' => content[i] = DieSide::DontCare,
+                _ => panic!("Invalid value, must only be 0s, 1s and -"),
+            }
+        }
+
+        Die { content }
+    }
+
     /// Tries to merge two dice. <br>
     /// Two dice are mergable when they differentiate in exactly 1 DieSide, ignoring DontCares. <br>
     /// If the dice are mergable the merged die will be returned, else none <br>
@@ -68,10 +88,13 @@ impl<const N: usize> Die<N> {
         // all values are either the same, or this die covers the other dice values with DontCares
         true
     }
+}
 
+impl<const N: usize> Display for Die<N> {
     /// Returns the die as string in the `(x1 x2 ... xN)` notation
-    pub fn to_string(&self) -> String {
-        format!(
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
             "({})",
             self.content
                 .iter()
@@ -79,24 +102,5 @@ impl<const N: usize> Die<N> {
                 .collect::<Vec<String>>()
                 .join(" ")
         )
-    }
-}
-
-/// The values a die's side can have
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub enum DieSide {
-    Zero,
-    One,
-    DontCare,
-}
-
-impl Display for DieSide {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            DieSide::Zero => "0",
-            DieSide::One => "1",
-            DieSide::DontCare => "-",
-        };
-        write!(f, "{s}")
     }
 }
