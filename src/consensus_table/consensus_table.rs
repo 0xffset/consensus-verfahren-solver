@@ -139,6 +139,42 @@ impl<const N: usize> ConesnsusTable<N> {
             }
         }
     }
+
+    fn entry_to_string(
+        &self,
+        entry: &ConsensusTableEntry<N>,
+        pad_num: usize,
+        pad_creators: usize,
+        pad_die: usize,
+        pad_covered: usize,
+    ) -> String {
+        let covered = match entry.covered {
+            Some(val) => match entry.num {
+                Some(num) if num == val => "X".to_string(),
+                Some(_) => format!("⊆ {val}"),
+                None => format!("⊆ {val}"),
+            },
+            None => "".to_string(),
+        };
+
+        let num = match entry.num {
+            Some(val) => val.to_string(),
+            None => "".to_string(),
+        };
+
+        format!(
+            " {:pad_num$} ┃ {:pad_creators$} ┃ {:pad_die$} ┃ {:pad_covered$} ",
+            num,
+            entry
+                .creators
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<String>>()
+                .join(", "),
+            entry.die.to_string(),
+            covered,
+        )
+    }
 }
 
 impl<const N: usize> From<Vec<ConsensusTableEntry<N>>> for ConesnsusTable<N> {
@@ -228,7 +264,13 @@ impl<const N: usize> Display for ConesnsusTable<N> {
             writeln!(
                 f,
                 "{}",
-                entry.to_string(biggest_num, biggest_creators, die_len, biggest_covered)
+                self.entry_to_string(
+                    entry,
+                    biggest_num,
+                    biggest_creators,
+                    die_len,
+                    biggest_covered
+                )
             )?;
         }
 
