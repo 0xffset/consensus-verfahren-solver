@@ -52,7 +52,7 @@ impl<const N: usize> ConsensusTableEntry<N> {
         let covered = match self.covered {
             Some(val) => match self.num {
                 Some(num) if num == val => "X".to_string(),
-                Some(num) => format!("⊆ {val}"),
+                Some(_) => format!("⊆ {val}"),
                 None => format!("⊆ {val}"),
             },
             None => "".to_string(),
@@ -82,10 +82,23 @@ pub fn print_consensus_table<const N: usize>(entries: &Vec<ConsensusTableEntry<N
     let mut biggest_num = NUM_TITLE.len();
     let mut biggest_creators = CREATOR_TITLE.len();
     let mut biggest_covered = COVERED_TITLE.len();
-    let mut die_len = entries[0].die.to_string().len();
-    if die_len < DIE_TITLE.len() {
-        die_len = DIE_TITLE.len();
-    }
+    let mut die_len = DIE_TITLE.len();
+    die_len = if !entries.is_empty() {
+        entries[0].die.to_string().len()
+    } else {
+        println!(
+            " {:biggest_num$} ┃ {:biggest_creators$} ┃ {:die_len$} ┃ {:biggest_covered$}",
+            NUM_TITLE, CREATOR_TITLE, DIE_TITLE, COVERED_TITLE
+        );
+        println!(
+            "{}╋{}╋{}╋{}",
+            "━".repeat(biggest_num + 2),
+            "━".repeat(biggest_creators + 2),
+            "━".repeat(die_len + 2),
+            "━".repeat(biggest_covered + 2)
+        );
+        return;
+    };
 
     for entry in entries {
         match entry.num {

@@ -9,57 +9,14 @@ fn main() {
     let mut dice = Vec::new();
     let mut dont_cares = Vec::new();
 
+    // TODO: add that combinations of dont cares that arent used (like bellow) will be discarded
+
     dice.push(Die {
         content: [
             DieSide::Zero,
             DieSide::One,
             DieSide::One,
             DieSide::Zero,
-            DieSide::Zero,
-        ],
-    });
-    dice.push(Die {
-        content: [
-            DieSide::Zero,
-            DieSide::One,
-            DieSide::One,
-            DieSide::Zero,
-            DieSide::One,
-        ],
-    });
-    dice.push(Die {
-        content: [
-            DieSide::Zero,
-            DieSide::One,
-            DieSide::One,
-            DieSide::One,
-            DieSide::Zero,
-        ],
-    });
-    dice.push(Die {
-        content: [
-            DieSide::Zero,
-            DieSide::One,
-            DieSide::One,
-            DieSide::One,
-            DieSide::One,
-        ],
-    });
-    dice.push(Die {
-        content: [
-            DieSide::One,
-            DieSide::One,
-            DieSide::One,
-            DieSide::Zero,
-            DieSide::One,
-        ],
-    });
-    dice.push(Die {
-        content: [
-            DieSide::One,
-            DieSide::One,
-            DieSide::One,
-            DieSide::One,
             DieSide::Zero,
         ],
     });
@@ -70,15 +27,15 @@ fn main() {
             DieSide::Zero,
             DieSide::Zero,
             DieSide::Zero,
-            DieSide::One,
+            DieSide::Zero,
         ],
     });
     dont_cares.push(Die {
         content: [
-            DieSide::One,
             DieSide::Zero,
             DieSide::Zero,
-            DieSide::One,
+            DieSide::Zero,
+            DieSide::Zero,
             DieSide::Zero,
         ],
     });

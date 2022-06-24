@@ -8,18 +8,28 @@ pub fn solve_using_consensus_method<const N: usize>(dice: Vec<Die<N>>, dont_care
     let mut count = 0;
 
     // convert all dont care dice to TabelEntries
-    let mut entries: Vec<ConsensusTableEntry<N>> = dont_care
-        .iter()
-        .map(|&die| {
-            let entry = ConsensusTableEntry::new(Some(count), die, true);
-            count += 1;
-            entry
-        })
-        .collect();
+    let mut entries: Vec<ConsensusTableEntry<N>> = Vec::new();
 
-    // save the highest dont_care num
-    let dont_care_bound = count;
-    
+    if !dont_care.is_empty() {
+        entries = dont_care
+            .iter()
+            .map(|&die| {
+                let mut entry = ConsensusTableEntry::new(Some(count), die, true);
+                // mark optional entries as covered by themselves
+                // helps with saving on looping through the entire vector
+                // to check for unused optional dont care dice
+                entry.covered = Some(count);
+                count += 1;
+                entry
+            })
+            .collect();
+    }
+
+    if dice.is_empty() {
+        print_consensus_table(&entries);
+        return;
+    }
+
     // convert all normal dice to TableEntries
     for entry in dice.iter().map(|&die| {
         let entry = ConsensusTableEntry::new(Some(count), die, false);
@@ -33,26 +43,44 @@ pub fn solve_using_consensus_method<const N: usize>(dice: Vec<Die<N>>, dont_care
         let mut curr = 1;
         // start at the second element, and walk down the list
         while curr < entries.len() {
-            // if the element is covered by another element, skip it
-            if entries[curr].covered.is_some() {
-                continue;
+            // if the element is covered by another element (and not dont care by itself), skip it
+            match entries[curr].covered {
+                Some(val) => match entries[curr].num {
+                    Some(num) if val != num => continue,
+                    _ => {}
+                },
+                _ => {}
             }
 
             // compare all previous elements to the current one
             for comp in 0..curr {
-                // if the element is covered by another element, skip it
-                if entries[comp].covered.is_some() {
-                    continue;
+                // if the element is covered by another element (and not dont care by itself), skip it
+                match entries[comp].covered {
+                    Some(val) => match entries[comp].num {
+                        Some(num) if val != num => continue,
+                        _ => {}
+                    },
+                    _ => {}
                 }
 
                 if let Some(mut new_entry) =
                     ConsensusTableEntry::merge(&entries[curr], &entries[comp])
                 {
-                    // check if die is being covered
+                    // check if die is being covered (and not dont care by itself)
                     for entry in &entries {
-                        if entry.covered.is_none() && entry.die.covers(new_entry.die) {
-                            new_entry.covered = Some(entry.num.unwrap());
-                            break;
+                        match entry.covered {
+                            Some(val) => match entry.num {
+                                Some(num) if val == num && entry.die.covers(new_entry.die) => {
+                                    new_entry.covered = Some(entry.num.unwrap());
+                                    break;
+                                }
+                                _ => {}
+                            },
+                            _ if entry.die.covers(new_entry.die) => {
+                                new_entry.covered = Some(entry.num.unwrap());
+                                break;
+                            }
+                            _ => {}
                         }
                     }
 
@@ -62,7 +90,6 @@ pub fn solve_using_consensus_method<const N: usize>(dice: Vec<Die<N>>, dont_care
                     }
 
                     // assign die number since its not covered
-                    // this loop assumes that there is at least one die with a number
                     for entry in entries.iter().rev() {
                         if entry.num.is_some() {
                             new_entry.num = Some(entry.num.unwrap() + 1);
@@ -70,10 +97,19 @@ pub fn solve_using_consensus_method<const N: usize>(dice: Vec<Die<N>>, dont_care
                         }
                     }
 
-                    // check if new entry covers the other ones
+                    // check if new entry covers the other ones (and not dont care by itself)
                     for entry in &mut entries {
-                        if entry.covered.is_none() && new_entry.die.covers(entry.die) {
-                            entry.covered = Some(new_entry.num.unwrap());
+                        match entry.covered {
+                            Some(val) => match entry.num {
+                                Some(num) if val == num && new_entry.die.covers(entry.die) => {
+                                    entry.covered = Some(new_entry.num.unwrap())
+                                }
+                                _ => {}
+                            },
+                            _ if new_entry.die.covers(entry.die) => {
+                                entry.covered = Some(new_entry.num.unwrap())
+                            }
+                            _ => {}
                         }
                     }
 
@@ -83,23 +119,7 @@ pub fn solve_using_consensus_method<const N: usize>(dice: Vec<Die<N>>, dont_care
 
             curr += 1;
         }
-
-        for num in 0..dont_care_bound {
-            let mut found = false;
-            // check if entry is used
-            for entry in &entries {
-                if entry.creators.contains(&num) {
-                    found = true;
-                    break;
-                }
-            }
-
-            // else mark it as covered by itself since its optional
-            if !found {
-                entries[num].covered = Some(num);
-            }
-        }
-
-        print_consensus_table(&entries);
     }
+    
+    print_consensus_table(&entries);
 }
