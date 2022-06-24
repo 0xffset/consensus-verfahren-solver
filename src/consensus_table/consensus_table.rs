@@ -48,51 +48,75 @@ impl<const N: usize> ConesnsusTable<N> {
         ConesnsusTable { entries }
     }
 
+    /// This function checks if an entry in the table covers the passed entry and, if it does, sets the covered attribute accordingly
+    fn table_covers_die(&self, subject: &mut ConsensusTableEntry<N>) {
+        for entry in &self.entries {
+            match entry.covered {
+                Some(val) => match entry.num {
+                    Some(num) if val == num && entry.die.covers(subject.die) => {
+                        subject.covered = Some(entry.num.unwrap());
+                        break;
+                    }
+                    _ => {}
+                },
+                _ if entry.die.covers(subject.die) => {
+                    subject.covered = Some(entry.num.unwrap());
+                    break;
+                }
+                _ => {}
+            }
+        }
+    }
+
+    /// Adds an entry to the table, marking all entries the new entry covers as covered by that
+    fn add_entry_to_table(&mut self, subject: ConsensusTableEntry<N>) {
+        // check if new entry covers the other ones (and not dont care by itself)
+        for entry in &mut self.entries {
+            match entry.covered {
+                Some(val) => match entry.num {
+                    Some(num) if val == num && subject.die.covers(entry.die) => {
+                        entry.covered = Some(subject.num.unwrap())
+                    }
+                    _ => {}
+                },
+                _ if subject.die.covers(entry.die) => entry.covered = Some(subject.num.unwrap()),
+                _ => {}
+            }
+        }
+
+        self.entries.push(subject);
+    }
+
+    /// Checks if the element at index i is covered (ignoring dont cares that cover themselves)
+    fn is_covered(&self, i: usize) -> bool {
+        match self.entries[i].covered {
+            Some(val) => match self.entries[i].num {
+                Some(num) if val != num => true,
+                _ => false,
+            },
+            _ => false,
+        }
+    }
+
     pub fn solve(&mut self) {
         if self.entries.len() > 1 {
             let mut curr = 1;
             // start at the second element, and walk down the list
             while curr < self.entries.len() {
-                // if the element is covered by another element (and not dont care by itself), skip it
-                match self.entries[curr].covered {
-                    Some(val) => match self.entries[curr].num {
-                        Some(num) if val != num => continue,
-                        _ => {}
-                    },
-                    _ => {}
+                if self.is_covered(curr) {
+                    continue;
                 }
 
                 // compare all previous elements to the current one
                 for comp in 0..curr {
-                    // if the element is covered by another element (and not dont care by itself), skip it
-                    match self.entries[comp].covered {
-                        Some(val) => match self.entries[comp].num {
-                            Some(num) if val != num => continue,
-                            _ => {}
-                        },
-                        _ => {}
+                    if self.is_covered(comp) {
+                        continue;
                     }
 
                     if let Some(mut new_entry) =
                         ConsensusTableEntry::merge(&self.entries[curr], &self.entries[comp])
                     {
-                        // check if die is being covered (and not dont care by itself)
-                        for entry in &self.entries {
-                            match entry.covered {
-                                Some(val) => match entry.num {
-                                    Some(num) if val == num && entry.die.covers(new_entry.die) => {
-                                        new_entry.covered = Some(entry.num.unwrap());
-                                        break;
-                                    }
-                                    _ => {}
-                                },
-                                _ if entry.die.covers(new_entry.die) => {
-                                    new_entry.covered = Some(entry.num.unwrap());
-                                    break;
-                                }
-                                _ => {}
-                            }
-                        }
+                        self.table_covers_die(&mut new_entry);
 
                         // if the die is covered don't assign a number and continue
                         if new_entry.covered.is_some() {
@@ -107,23 +131,7 @@ impl<const N: usize> ConesnsusTable<N> {
                             }
                         }
 
-                        // check if new entry covers the other ones (and not dont care by itself)
-                        for entry in &mut self.entries {
-                            match entry.covered {
-                                Some(val) => match entry.num {
-                                    Some(num) if val == num && new_entry.die.covers(entry.die) => {
-                                        entry.covered = Some(new_entry.num.unwrap())
-                                    }
-                                    _ => {}
-                                },
-                                _ if new_entry.die.covers(entry.die) => {
-                                    entry.covered = Some(new_entry.num.unwrap())
-                                }
-                                _ => {}
-                            }
-                        }
-
-                        self.entries.push(new_entry);
+                        self.add_entry_to_table(new_entry);
                     }
                 }
 
