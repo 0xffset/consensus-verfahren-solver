@@ -7,6 +7,7 @@ mod table_entry;
 
 fn main() {
     let mut dice = Vec::new();
+    let mut dont_cares = Vec::new();
 
     dice.push(Die {
         content: [
@@ -63,5 +64,24 @@ fn main() {
         ],
     });
 
-    solve_using_consensus_method(dice);
+    dont_cares.push(Die {
+        content: [
+            DieSide::One,
+            DieSide::Zero,
+            DieSide::Zero,
+            DieSide::Zero,
+            DieSide::One,
+        ],
+    });
+    dont_cares.push(Die {
+        content: [
+            DieSide::One,
+            DieSide::Zero,
+            DieSide::Zero,
+            DieSide::One,
+            DieSide::Zero,
+        ],
+    });
+
+    solve_using_consensus_method(dice, dont_cares);
 }

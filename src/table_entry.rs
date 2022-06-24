@@ -11,15 +11,17 @@ pub struct ConsensusTableEntry<const N: usize> {
     pub creators: Vec<usize>,
     pub die: Die<N>,
     pub covered: Option<usize>,
+    pub dont_care: bool,
 }
 
 impl<const N: usize> ConsensusTableEntry<N> {
-    pub fn new(num: Option<usize>, die: Die<N>) -> Self {
+    pub fn new(num: Option<usize>, die: Die<N>, dont_care: bool) -> Self {
         ConsensusTableEntry {
             num,
             creators: Vec::new(),
             die,
             covered: None,
+            dont_care,
         }
     }
 
@@ -32,6 +34,7 @@ impl<const N: usize> ConsensusTableEntry<N> {
                 creators: vec![a.num.unwrap(), b.num.unwrap()],
                 die: merged_die,
                 covered: None,
+                dont_care: false,
             });
         }
 
@@ -47,7 +50,11 @@ impl<const N: usize> ConsensusTableEntry<N> {
         pad_covered: usize,
     ) -> String {
         let covered = match self.covered {
-            Some(val) => format!("⊆ {val}"),
+            Some(val) => match self.num {
+                Some(num) if num == val => "X".to_string(),
+                Some(num) => format!("⊆ {val}"),
+                None => format!("⊆ {val}"),
+            },
             None => "".to_string(),
         };
 
@@ -57,7 +64,7 @@ impl<const N: usize> ConsensusTableEntry<N> {
         };
 
         format!(
-            " {:pad_num$} | {:pad_creators$} | {:pad_die$} | {:pad_covered$} ",
+            " {:pad_num$} ┃ {:pad_creators$} ┃ {:pad_die$} ┃ {:pad_covered$} ",
             num,
             self.creators
                 .iter()
@@ -71,16 +78,24 @@ impl<const N: usize> ConsensusTableEntry<N> {
 }
 
 /// Prints the entire table
-pub fn print_consensus_table_entries<const N: usize>(entries: &Vec<ConsensusTableEntry<N>>) {
-    let mut biggest_num = 0;
-    let mut biggest_creators = 0;
-    let mut biggest_covered = 0;
+pub fn print_consensus_table<const N: usize>(entries: &Vec<ConsensusTableEntry<N>>) {
+    let mut biggest_num = NUM_TITLE.len();
+    let mut biggest_creators = CREATOR_TITLE.len();
+    let mut biggest_covered = COVERED_TITLE.len();
     let mut die_len = entries[0].die.to_string().len();
+    if die_len < DIE_TITLE.len() {
+        die_len = DIE_TITLE.len();
+    }
+
     for entry in entries {
         match entry.num {
-            Some(val) if val > biggest_num => biggest_num = val,
-            Some(_) => {}
-            None => {}
+            Some(val) => {
+                let num_len = val.to_string().len();
+                if num_len > biggest_num {
+                    biggest_num = num_len;
+                }
+            }
+            _ => {}
         }
 
         if !entry.creators.is_empty() {
@@ -95,30 +110,33 @@ pub fn print_consensus_table_entries<const N: usize>(entries: &Vec<ConsensusTabl
             }
         }
 
+        // only look at not optional dice, since optional dice will be marked with 'X'
         match entry.covered {
-            Some(val) if val > biggest_covered => biggest_covered = val,
-            Some(_) => {}
-            None => {}
+            Some(val) => match entry.num {
+                Some(num) if num != val => {
+                    let num_len = val.to_string().len();
+                    if num_len > biggest_covered {
+                        biggest_covered = num_len;
+                    }
+                }
+                _ => {}
+            },
+            _ => {}
         }
     }
 
-    if biggest_num < NUM_TITLE.len() {
-        biggest_num = NUM_TITLE.len();
-    }
-    if biggest_covered < COVERED_TITLE.len() {
-        biggest_covered = COVERED_TITLE.len();
-    }
-    if biggest_creators < CREATOR_TITLE.len() {
-        biggest_creators = CREATOR_TITLE.len();
-    }
-    if die_len < DIE_TITLE.len() {
-        die_len = DIE_TITLE.len();
-    }
-
     println!(
-        " {:biggest_num$} | {:biggest_creators$} | {:die_len$} | {:biggest_covered$}",
+        " {:biggest_num$} ┃ {:biggest_creators$} ┃ {:die_len$} ┃ {:biggest_covered$}",
         NUM_TITLE, CREATOR_TITLE, DIE_TITLE, COVERED_TITLE
     );
+    println!(
+        "{}╋{}╋{}╋{}",
+        "━".repeat(biggest_num + 2),
+        "━".repeat(biggest_creators + 2),
+        "━".repeat(die_len + 2),
+        "━".repeat(biggest_covered + 2)
+    );
+
     for entry in entries {
         println!(
             "{}",

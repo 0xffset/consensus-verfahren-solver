@@ -1,20 +1,33 @@
 use crate::{
     die::Die,
-    table_entry::{print_consensus_table_entries, ConsensusTableEntry},
+    table_entry::{print_consensus_table, ConsensusTableEntry},
 };
 
 /// Solves the given function in die form using the consensus method
-pub fn solve_using_consensus_method<const N: usize>(dice: Vec<Die<N>>) {
+pub fn solve_using_consensus_method<const N: usize>(dice: Vec<Die<N>>, dont_care: Vec<Die<N>>) {
     let mut count = 0;
-    // convert all dice to TabelEntries
-    let mut entries: Vec<ConsensusTableEntry<N>> = dice
+
+    // convert all dont care dice to TabelEntries
+    let mut entries: Vec<ConsensusTableEntry<N>> = dont_care
         .iter()
         .map(|&die| {
-            let entry = ConsensusTableEntry::new(Some(count), die);
+            let entry = ConsensusTableEntry::new(Some(count), die, true);
             count += 1;
             entry
         })
         .collect();
+
+    // save the highest dont_care num
+    let dont_care_bound = count;
+    
+    // convert all normal dice to TableEntries
+    for entry in dice.iter().map(|&die| {
+        let entry = ConsensusTableEntry::new(Some(count), die, false);
+        count += 1;
+        entry
+    }) {
+        entries.push(entry);
+    }
 
     if entries.len() > 1 {
         let mut curr = 1;
@@ -32,7 +45,9 @@ pub fn solve_using_consensus_method<const N: usize>(dice: Vec<Die<N>>) {
                     continue;
                 }
 
-                if let Some(mut new_entry) = ConsensusTableEntry::merge(&entries[curr], &entries[comp]) {
+                if let Some(mut new_entry) =
+                    ConsensusTableEntry::merge(&entries[curr], &entries[comp])
+                {
                     // check if die is being covered
                     for entry in &entries {
                         if entry.covered.is_none() && entry.die.covers(new_entry.die) {
@@ -57,7 +72,7 @@ pub fn solve_using_consensus_method<const N: usize>(dice: Vec<Die<N>>) {
 
                     // check if new entry covers the other ones
                     for entry in &mut entries {
-                        if new_entry.die.covers(entry.die) {
+                        if entry.covered.is_none() && new_entry.die.covers(entry.die) {
                             entry.covered = Some(new_entry.num.unwrap());
                         }
                     }
@@ -68,7 +83,23 @@ pub fn solve_using_consensus_method<const N: usize>(dice: Vec<Die<N>>) {
 
             curr += 1;
         }
-    }
 
-    print_consensus_table_entries(&entries);
+        for num in 0..dont_care_bound {
+            let mut found = false;
+            // check if entry is used
+            for entry in &entries {
+                if entry.creators.contains(&num) {
+                    found = true;
+                    break;
+                }
+            }
+
+            // else mark it as covered by itself since its optional
+            if !found {
+                entries[num].covered = Some(num);
+            }
+        }
+
+        print_consensus_table(&entries);
+    }
 }
