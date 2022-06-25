@@ -88,6 +88,10 @@ impl<const N: usize> Die<N> {
         // all values are either the same, or this die covers the other dice values with DontCares
         true
     }
+
+    pub fn as_binary_string(&self) -> String {
+        self.content.iter().map(ToString::to_string).collect()
+    }
 }
 
 impl<const N: usize> Display for Die<N> {

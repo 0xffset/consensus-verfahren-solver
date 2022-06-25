@@ -14,14 +14,14 @@ pub fn unused_dont_care() {
     let compare: ConesnsusTable<5> = ConesnsusTable::from(vec![
         ConsensusTableEntry {
             num: Some(0),
-            creators: Vec::new(),
+            creators: None,
             die: Die::new("00000"),
             covered: Some(0),
             dont_care: true,
         },
         ConsensusTableEntry {
             num: Some(1),
-            creators: Vec::new(),
+            creators: None,
             die: Die::new("01100"),
             covered: None,
             dont_care: false,
@@ -46,28 +46,28 @@ pub fn unused_merged_dont_care() {
     let compare: ConesnsusTable<5> = ConesnsusTable::from(vec![
         ConsensusTableEntry {
             num: Some(0),
-            creators: Vec::new(),
+            creators: None,
             die: Die::new("00000"),
             covered: Some(3),
             dont_care: true,
         },
         ConsensusTableEntry {
             num: Some(1),
-            creators: Vec::new(),
+            creators: None,
             die: Die::new("10000"),
             covered: Some(3),
             dont_care: true,
         },
         ConsensusTableEntry {
             num: Some(2),
-            creators: Vec::new(),
+            creators: None,
             die: Die::new("01100"),
             covered: None,
             dont_care: false,
         },
         ConsensusTableEntry {
             num: Some(3),
-            creators: vec![1, 0],
+            creators: Some([1, 0]),
             die: Die::new("-0000"),
             covered: Some(3),
             dont_care: true,

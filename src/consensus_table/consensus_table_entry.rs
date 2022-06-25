@@ -3,7 +3,7 @@ use crate::Die;
 /// Represents an entry in the table used in the consensus method
 pub struct ConsensusTableEntry<const N: usize> {
     pub num: Option<usize>,
-    pub creators: Vec<usize>,
+    pub creators: Option<[usize; 2]>,
     pub die: Die<N>,
     pub covered: Option<usize>,
     pub dont_care: bool,
@@ -13,7 +13,7 @@ impl<const N: usize> ConsensusTableEntry<N> {
     pub fn new(num: Option<usize>, die: Die<N>, dont_care: bool) -> Self {
         ConsensusTableEntry {
             num,
-            creators: Vec::new(),
+            creators: None,
             die,
             covered: None,
             dont_care,
@@ -26,7 +26,7 @@ impl<const N: usize> ConsensusTableEntry<N> {
         if let Some(merged_die) = a.die.merge(b.die) {
             return Some(ConsensusTableEntry {
                 num: None,
-                creators: vec![a.num.unwrap(), b.num.unwrap()],
+                creators: Some([a.num.unwrap(), b.num.unwrap()]),
                 die: merged_die,
                 covered: None,
                 dont_care: false,

@@ -171,12 +171,11 @@ impl<const N: usize> ConesnsusTable<N> {
         format!(
             " {:pad_num$} ┃ {:pad_creators$} ┃ {:pad_die$} ┃ {:pad_covered$} ",
             num,
-            entry
-                .creators
+            entry.creators.map_or(String::new(), |creators| creators
                 .iter()
                 .map(ToString::to_string)
                 .collect::<Vec<String>>()
-                .join(", "),
+                .join(", ")),
             entry.die.to_string(),
             covered,
         )
@@ -227,12 +226,16 @@ impl<const N: usize> Display for ConesnsusTable<N> {
                 _ => {}
             }
 
-            if !entry.creators.is_empty() {
+            if entry.creators.is_some() {
                 let len = entry
                     .creators
-                    .iter()
-                    .map(ToString::to_string)
-                    .collect::<String>()
+                    .map_or(String::new(), |creators| {
+                        creators
+                            .iter()
+                            .map(ToString::to_string)
+                            .collect::<Vec<String>>()
+                            .join(", ")
+                    })
                     .len();
                 if len > biggest_creators {
                     biggest_creators = len
