@@ -131,6 +131,12 @@ impl<const N: usize> ConesnsusTable<N> {
                             }
                         }
 
+                        // mark the die as dont care if it was made by two dont cares
+                        if self.entries[curr].dont_care && self.entries[comp].dont_care {
+                            new_entry.dont_care = true;
+                            new_entry.covered = Some(new_entry.num.unwrap());
+                        }
+
                         self.add_entry_to_table(new_entry);
                     }
                 }
@@ -248,17 +254,19 @@ impl<const N: usize> Display for ConesnsusTable<N> {
             }
         }
 
-        println!(
+        writeln!(
+            f,
             " {:biggest_num$} ┃ {:biggest_creators$} ┃ {:die_len$} ┃ {:biggest_covered$}",
             NUM_TITLE, CREATOR_TITLE, DIE_TITLE, COVERED_TITLE
-        );
-        println!(
+        )?;
+        writeln!(
+            f,
             "{}╋{}╋{}╋{}",
             "━".repeat(biggest_num + 2),
             "━".repeat(biggest_creators + 2),
             "━".repeat(die_len + 2),
             "━".repeat(biggest_covered + 2)
-        );
+        )?;
 
         for entry in &self.entries {
             writeln!(
