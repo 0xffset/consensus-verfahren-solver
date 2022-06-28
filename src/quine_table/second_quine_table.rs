@@ -1,14 +1,22 @@
 use std::fmt::Display;
 
-use super::second_quine_table_entry::SecondQuineTableEntry;
+use crate::Die;
+
+use super::{
+    second_quine_table_cell::SecondQuineTableCell, second_quine_table_entry::SecondQuineTableEntry,
+};
 
 const DIE_TITLE: &str = "Die";
 
 pub struct SecondQuineTable<const N: usize> {
     entries: Vec<SecondQuineTableEntry<N>>,
+    table: Vec<Vec<SecondQuineTableCell>>,
 }
 
 impl<const N: usize> SecondQuineTable<N> {
+    /// Solves the quine table for its prime implicants
+    pub fn solve(&mut self) {}
+
     fn entry_to_string(
         &self,
         entry: &SecondQuineTableEntry<N>,
@@ -31,7 +39,36 @@ impl<const N: usize> SecondQuineTable<N> {
 
 impl<const N: usize> From<Vec<SecondQuineTableEntry<N>>> for SecondQuineTable<N> {
     fn from(entries: Vec<SecondQuineTableEntry<N>>) -> Self {
-        SecondQuineTable { entries }
+        let mut terms = Vec::new();
+        for entry in &entries {
+            for &term in &entry.covers {
+                if !terms.contains(&term) {
+                    terms.push(term);
+                }
+            }
+        }
+        terms.sort();
+
+        let mut table = vec![vec![SecondQuineTableCell::default(); entries.len()]; terms.len()];
+
+        for (i, entry) in entries.iter().enumerate() {
+            for &term in &entry.covers {
+                table[i][term].entry = true;
+            }
+        }
+
+        SecondQuineTable { entries, table }
+    }
+}
+
+impl<const N: usize> From<Vec<Die<N>>> for SecondQuineTable<N> {
+    fn from(entries: Vec<Die<N>>) -> Self {
+        SecondQuineTable::from(
+            entries
+                .iter()
+                .map(|&die| SecondQuineTableEntry::from(die))
+                .collect::<Vec<SecondQuineTableEntry<N>>>(),
+        )
     }
 }
 
